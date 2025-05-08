@@ -12,24 +12,16 @@
       overflow-x: auto;
     }
 
-    .header {
-      text-align: center;
-      background: #222;
-      color: white;
-      padding: 10px;
-      font-size: 14px;
-    }
-
     .timeline-container {
       position: relative;
       height: 100vh;
       display: flex;
-      margin-left: 60px; /* Added to prevent overlap with time ruler */
+      margin-left: 60px;
     }
 
     .time-ruler {
-      position: fixed; /* Changed to fixed so it doesn't shift content */
-      top: 50px; /* Offset to account for header height */
+      position: fixed;
+      top: 50px;
       left: 0;
       width: 60px;
       height: calc(100vh - 50px);
@@ -76,18 +68,38 @@
       margin-top: 5px;
     }
 
-    .cursor-line {
+    .cursor-line, .hover-line {
       position: absolute;
       left: 0;
       right: 0;
       height: 2px;
-      background: red;
       z-index: 5;
+    }
+
+    .cursor-line {
+      background: red;
+    }
+
+    .hover-line {
+      background: blue;
+    }
+
+    .floating-time, .hover-time {
+      position: absolute;
+      left: -55px;
+      font-size: 12px;
+      background: #222;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      z-index: 20;
+      transform: translateY(-50%);
+      white-space: nowrap;
     }
 
     .notification {
       position: fixed;
-      top: 50px;
+      top: 10px;
       left: 50%;
       transform: translateX(-50%);
       background: #333;
@@ -101,11 +113,13 @@
   </style>
 </head>
 <body>
-  <div class="header" id="timeNow">WIB Time: --:--</div>
   <div class="notification" id="notification"></div>
   <div class="time-ruler" id="ruler"></div>
   <div class="timeline-container" id="timeline">
     <div class="cursor-line" id="cursorLine"></div>
+    <div class="floating-time" id="floatingTime">--:--</div>
+    <div class="hover-line" id="hoverLine" style="display:none;"></div>
+    <div class="hover-time" id="hoverTime" style="display:none;">--:--</div>
   </div>
 
   <script>
@@ -121,6 +135,11 @@
     const timeline = document.getElementById("timeline");
     const ruler = document.getElementById("ruler");
     const notification = document.getElementById("notification");
+    const floatingTime = document.getElementById("floatingTime");
+    const cursorLine = document.getElementById("cursorLine");
+    const hoverLine = document.getElementById("hoverLine");
+    const hoverTime = document.getElementById("hoverTime");
+
     let sessionStates = {};
 
     // Build time labels
@@ -163,11 +182,13 @@
       const hour = wib.getHours();
       const minute = wib.getMinutes();
       const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      document.getElementById("timeNow").innerText = `WIB Time: ${timeStr}`;
 
       const totalMin = ((hour - startHour + 24) % 24) * 60 + minute;
       const percentage = totalMin / (totalHours * 60);
-      document.getElementById("cursorLine").style.top = `${percentage * 100}%`;
+
+      cursorLine.style.top = `${percentage * 100}%`;
+      floatingTime.innerText = timeStr;
+      floatingTime.style.top = `${percentage * 100}%`;
 
       // Highlight and notify session status
       sessions.forEach(session => {
@@ -200,6 +221,30 @@
         notification.style.display = 'none';
       }, 4000);
     }
+
+    // Mouse hover time tracking
+    timeline.addEventListener("mousemove", (e) => {
+      const rect = timeline.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const pct = y / rect.height;
+      const totalMin = pct * totalHours * 60;
+      const hour = Math.floor(totalMin / 60);
+      const minute = Math.floor(totalMin % 60);
+      const displayHour = (startHour + hour) % 24;
+      const timeStr = `${displayHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+      hoverLine.style.top = `${pct * 100}%`;
+      hoverLine.style.display = "block";
+
+      hoverTime.innerText = timeStr;
+      hoverTime.style.top = `${pct * 100}%`;
+      hoverTime.style.display = "block";
+    });
+
+    timeline.addEventListener("mouseleave", () => {
+      hoverLine.style.display = "none";
+      hoverTime.style.display = "none";
+    });
 
     updateCursorLine();
     setInterval(updateCursorLine, 60000);
