@@ -1,207 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Forex Sessions Timeline (WIB)</title>
+  <meta charset="UTF-8">
+  <title>Forex Session Dart Clock</title>
   <style>
     body {
-      margin: 0;
+      background: #1e1e1e;
+      color: white;
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      overflow-x: auto;
-    }
-
-    .header {
       text-align: center;
-      background: #222;
-      color: white;
-      padding: 10px;
-      font-size: 14px;
     }
-
-    .timeline-container {
-      position: relative;
-      height: 100vh;
-      display: flex;
-    }
-
-    .time-ruler {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 60px;
-      height: 100%;
-      border-right: 1px solid #ccc;
-      background: #fff;
-      z-index: 1;
-    }
-
-    .time-label {
-      position: absolute;
-      width: 100%;
-      text-align: right;
-      font-size: 10px;
-      color: #000;
-      padding-right: 5px;
-    }
-
-    .session {
-      flex: 1;
-      position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      border-left: 1px solid #ccc;
-      background: #fff;
-    }
-
-    .session-bar {
-      position: absolute;
-      width: 80%;
-      border-radius: 4px;
-      text-align: center;
-      font-size: 10px;
-      color: #000;
-      padding: 2px;
-      box-sizing: border-box;
-      transition: opacity 0.3s;
-    }
-
-    .session-info {
-      font-weight: bold;
-      font-size: 12px;
-      text-align: center;
-      margin-top: 5px;
-    }
-
-    .cursor-line {
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: red;
-      z-index: 5;
-    }
-
-    .notification {
-      position: fixed;
-      top: 50px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #333;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 5px;
-      font-size: 13px;
-      z-index: 999;
-      display: none;
+    canvas {
+      margin-top: 20px;
+      background-color: #2e2e2e;
+      border-radius: 50%;
     }
   </style>
 </head>
 <body>
-  <div class="header" id="timeNow">WIB Time: --:--</div>
-  <div class="notification" id="notification"></div>
-  <div class="timeline-container" id="timeline">
-    <div class="time-ruler" id="ruler"></div>
-    <div class="cursor-line" id="cursorLine"></div>
-  </div>
+  <h1>Forex Session Clock (WIB - Jakarta Time)</h1>
+  <canvas id="forexClock" width="500" height="500"></canvas>
 
   <script>
+    const canvas = document.getElementById("forexClock");
+    const ctx = canvas.getContext("2d");
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+
     const sessions = [
-      { name: "Sydney", open: 5, close: 14, color: "#7ec8e3" },
-      { name: "Tokyo", open: 7, close: 16, color: "#fdd835" },
-      { name: "London", open: 14, close: 23, color: "#81c784" },
-      { name: "New York", open: 20, close: 29, color: "#ff8a65" } // 29 = 5 next day
+      { name: "Sydney", start: 5, end: 14, color: "#3fa" },
+      { name: "Tokyo", start: 7, end: 16, color: "#f93" },
+      { name: "London", start: 14, end: 23, color: "#39f" },
+      { name: "New York", start: 20, end: 5, color: "#f33" }
     ];
 
-    const totalHours = 24;
-    const startHour = 5;
-    const timeline = document.getElementById("timeline");
-    const ruler = document.getElementById("ruler");
-    const notification = document.getElementById("notification");
-    let sessionStates = {};
+    const ringWidth = 35;
 
-    // Build time labels
-    for (let i = 0; i <= totalHours; i++) {
-      const label = document.createElement("div");
-      label.className = "time-label";
-      label.style.top = `${(i / totalHours) * 100}%`;
-      label.innerText = `${String((startHour + i) % 24).padStart(2, "0")}:00`;
-      ruler.appendChild(label);
+    function drawClockFace() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.font = "12px Arial";
+      ctx.fillStyle = "white";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      for (let hour = 0; hour < 24; hour++) {
+        const angle = (hour / 24) * 2 * Math.PI - Math.PI / 2;
+        const radius = 215;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        ctx.fillText(hour.toString(), x, y);
+      }
     }
 
-    // Build session columns and bars
-    sessions.forEach(session => {
-      const col = document.createElement("div");
-      col.className = "session";
+    function drawSessionArc(start, end, radius, color) {
+      const startAngle = (start / 24) * 2 * Math.PI - Math.PI / 2;
+      const endAngle = (end / 24) * 2 * Math.PI - Math.PI / 2;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = ringWidth - 2;
+      ctx.lineCap = "butt";
+      ctx.stroke();
 
-      const duration = session.close - session.open;
-      const startPct = ((session.open - startHour + 24) % 24) / totalHours * 100;
-      const heightPct = (duration / totalHours) * 100;
+      // Midpoint for label
+      const midAngle = (startAngle + endAngle) / 2;
+      const labelRadius = radius - ringWidth / 2;
+      const x = centerX + labelRadius * Math.cos(midAngle);
+      const y = centerY + labelRadius * Math.sin(midAngle);
+      return { x, y };
+    }
 
-      const bar = document.createElement("div");
-      bar.className = "session-bar";
-      bar.style.top = `${startPct}%`;
-      bar.style.height = `${heightPct}%`;
-      bar.style.backgroundColor = session.color;
-      bar.dataset.name = session.name;
-      bar.innerHTML = `<div class="session-info">${session.name}</div>
-        <div>Open: ${session.open % 24}:00</div>
-        <div>Close: ${session.close % 24}:00</div>`;
+    function drawCalloutLabel(text, x, y, bgColor) {
+      ctx.font = "13px Arial";
+      const textWidth = ctx.measureText(text).width + 12;
+      const boxHeight = 20;
+      const rectX = x - textWidth / 2;
+      const rectY = y - boxHeight / 2;
 
-      col.appendChild(bar);
-      timeline.appendChild(col);
-    });
+      ctx.fillStyle = "#111";
+      ctx.strokeStyle = bgColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(rectX, rectY, textWidth, boxHeight, 6);
+      ctx.fill();
+      ctx.stroke();
 
-    function updateCursorLine() {
-      const now = new Date();
-      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-      const wib = new Date(utc + 7 * 3600 * 1000);
+      ctx.fillStyle = bgColor;
+      ctx.fillText(text, x, y + 1);
+    }
 
-      const hour = wib.getHours();
-      const minute = wib.getMinutes();
-      const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      document.getElementById("timeNow").innerText = `WIB Time: ${timeStr}`;
+    // Polyfill for roundRect
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        this.beginPath();
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r);
+        this.closePath();
+        return this;
+      };
+    }
 
-      const totalMin = ((hour - startHour + 24) % 24) * 60 + minute;
-      const percentage = totalMin / (totalHours * 60);
-      document.getElementById("cursorLine").style.top = `${percentage * 100}%`;
+    function drawSessions() {
+      const labelPositions = [];
 
-      // Highlight and notify session status
-      sessions.forEach(session => {
-        const open = session.open % 24;
-        const close = session.close % 24;
-        const nowHour = hour;
-        const isOpen = open < close
-          ? (nowHour >= open && nowHour < close)
-          : (nowHour >= open || nowHour < close); // overnight sessions
+      sessions.forEach((session, i) => {
+        const radius = 180 - i * ringWidth;
+        const { start, end, color, name } = session;
 
-        const bars = document.querySelectorAll(`[data-name='${session.name}']`);
-        bars.forEach(bar => {
-          bar.style.opacity = isOpen ? '1' : '0.4';
-        });
-
-        if (isOpen && !sessionStates[session.name]) {
-          notify(`${session.name} session is now OPEN`);
-          sessionStates[session.name] = true;
-        } else if (!isOpen && sessionStates[session.name]) {
-          notify(`${session.name} session is now CLOSED`);
-          sessionStates[session.name] = false;
+        if (end <= start) {
+          const mid1 = drawSessionArc(start, 24, radius, color);
+          const mid2 = drawSessionArc(0, end, radius, color);
+          labelPositions.push({ name, color, x: mid1.x, y: mid1.y });
+        } else {
+          const mid = drawSessionArc(start, end, radius, color);
+          labelPositions.push({ name, color, x: mid.x, y: mid.y });
         }
+      });
+
+      // Draw all labels after arcs
+      labelPositions.forEach(({ name, x, y, color }) => {
+        drawCalloutLabel(name, x, y, color);
       });
     }
 
-    function notify(msg) {
-      notification.innerText = msg;
-      notification.style.display = 'block';
-      setTimeout(() => {
-        notification.style.display = 'none';
-      }, 4000);
+    function drawTimeHand(hour, minute) {
+      const hourDecimal = hour + minute / 60;
+      const angle = (hourDecimal / 24) * 2 * Math.PI - Math.PI / 2;
+      const handLength = 140;
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX + handLength * Math.cos(angle), centerY + handLength * Math.sin(angle));
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
     }
 
-    updateCursorLine();
-    setInterval(updateCursorLine, 60000);
+    function updateClock() {
+      const now = new Date();
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      const wib = new Date(utc + 7 * 3600000);
+      const hour = wib.getHours();
+      const minute = wib.getMinutes();
+
+      drawClockFace();
+      drawSessions();
+      drawTimeHand(hour, minute);
+
+      requestAnimationFrame(updateClock);
+    }
+
+    updateClock();
   </script>
 </body>
 </html>
