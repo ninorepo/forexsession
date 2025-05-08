@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forex Session Clock</title>
+    <title>Forex Session Clock (WIB)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             background-color: #f4f4f4;
         }
+
         .clock-container {
             position: relative;
             width: 300px;
@@ -20,7 +21,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #fff;
+            background-color: #fff;
         }
 
         .clock {
@@ -28,39 +29,62 @@
             width: 100%;
             height: 100%;
             background: conic-gradient(
-                #28a745 0deg 8.33deg,   /* Asia Session */
-                #ff9800 8.33deg 16.66deg, /* Europe Session */
-                #2196f3 16.66deg 25deg, /* US Session */
-                #000 25deg 100deg        /* Closed */
+                #28a745 0deg 8.33deg,  /* Asia Session (Tokyo) */
+                #ff9800 8.33deg 16.66deg, /* Europe Session (London) */
+                #2196f3 16.66deg 25deg, /* US Session (New York) */
+                #000 25deg 100deg /* Market Closed */
             );
             border-radius: 50%;
-            clip-path: polygon(50% 50%, 100% 0, 100% 100%, 0% 100%, 0% 0);
+            transform: rotate(-90deg); /* Start from top */
+        }
+
+        .current-time-line {
+            position: absolute;
+            width: 2px;
+            height: 50%;
+            top: 0;
+            left: 50%;
+            background-color: #000;
+            transform-origin: 50% 100%;
+            transition: transform 1s;
         }
 
         .session-label {
             position: absolute;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
+            color: #fff;
         }
 
         .asia {
             transform: translate(-50%, -50%) rotate(0deg);
+            left: 50%;
+            top: 50%;
         }
+
         .europe {
             transform: translate(-50%, -50%) rotate(90deg);
+            left: 50%;
+            top: 50%;
         }
+
         .us {
             transform: translate(-50%, -50%) rotate(180deg);
+            left: 50%;
+            top: 50%;
         }
 
         .closed {
             transform: translate(-50%, -50%) rotate(270deg);
+            left: 50%;
+            top: 50%;
         }
 
         .time {
             margin-top: 20px;
             font-size: 18px;
         }
+
     </style>
 </head>
 <body>
@@ -68,13 +92,13 @@
     <h1>Forex Session Time (WIB)</h1>
 
     <div class="clock-container">
-        <div class="clock">
-            <!-- Sessions Labels -->
-            <div class="session-label asia">Asia (Tokyo)</div>
-            <div class="session-label europe">Europe (London)</div>
-            <div class="session-label us">US (New York)</div>
-            <div class="session-label closed">Closed</div>
-        </div>
+        <div class="clock"></div>
+        <div class="current-time-line" id="current-time-line"></div>
+        <!-- Sessions Labels -->
+        <div class="session-label asia">Asia (Tokyo)</div>
+        <div class="session-label europe">Europe (London)</div>
+        <div class="session-label us">US (New York)</div>
+        <div class="session-label closed">Closed</div>
     </div>
 
     <div class="time" id="current-time"></div>
@@ -99,6 +123,10 @@
             // Update the session color and time
             document.querySelector('.clock').style.background = sessionColor;
             document.getElementById("current-time").innerHTML = `Current Time (WIB): ${jakartaTime.toLocaleTimeString()}`;
+
+            // Update current time line
+            const timeAngle = (hours % 24 + minutes / 60 + seconds / 3600) * 15; // 360° / 24 hours = 15° per hour
+            document.getElementById("current-time-line").style.transform = `rotate(${timeAngle}deg)`;
         }
 
         function getSession(hour) {
