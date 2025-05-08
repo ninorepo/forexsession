@@ -34,25 +34,25 @@
             z-index: 1;
         }
 
-        /* Individual session colors */
+        /* Session colors */
         .asia {
             background-color: #28a745;
-            transform: rotate(0deg);
+            z-index: 1;
         }
 
         .europe {
             background-color: #ff9800;
-            transform: rotate(90deg);
+            z-index: 1;
         }
 
         .us {
             background-color: #2196f3;
-            transform: rotate(180deg);
+            z-index: 1;
         }
 
         .closed {
             background-color: #000;
-            transform: rotate(270deg);
+            z-index: 1;
         }
 
         .current-time-line {
@@ -152,6 +152,9 @@
             // Update current time line rotation
             const timeAngle = (hours % 24 + minutes / 60 + seconds / 3600) * 15; // 360° / 24 hours = 15° per hour
             document.getElementById("current-time-line").style.transform = `rotate(${timeAngle}deg)`;
+
+            // Update session layers dynamically
+            updateSessionLayers(session);
         }
 
         function getSession(hour) {
@@ -169,13 +172,36 @@
         function getSessionColor(session) {
             switch (session) {
                 case 'Asia':
-                    return 'conic-gradient(#28a745 0deg 8.33deg, #000 8.33deg 100deg)';
+                    return '#28a745';
                 case 'Europe':
-                    return 'conic-gradient(#ff9800 8.33deg 16.66deg, #000 16.66deg 100deg)';
+                    return '#ff9800';
                 case 'US':
-                    return 'conic-gradient(#2196f3 16.66deg 25deg, #000 25deg 100deg)';
+                    return '#2196f3';
                 default:
-                    return 'conic-gradient(#000 25deg 100deg)';
+                    return '#000';
+            }
+        }
+
+        function updateSessionLayers(session) {
+            // Reset all session layers to transparent
+            const layers = document.querySelectorAll('.session-layer');
+            layers.forEach(layer => {
+                layer.style.backgroundColor = 'transparent';
+            });
+
+            switch (session) {
+                case 'Asia':
+                    document.querySelector('.asia').style.backgroundColor = '#28a745';
+                    break;
+                case 'Europe':
+                    document.querySelector('.europe').style.backgroundColor = '#ff9800';
+                    break;
+                case 'US':
+                    document.querySelector('.us').style.backgroundColor = '#2196f3';
+                    break;
+                default:
+                    document.querySelector('.closed').style.backgroundColor = '#000';
+                    break;
             }
         }
 
