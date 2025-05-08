@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Forex Sessions Timeline (WIB)</title>
   <style>
     body {
@@ -10,12 +10,22 @@
       background: #f4f4f4;
     }
 
-    .timeline {
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    .timeline-container {
       position: relative;
       width: 100%;
-      height: 200px;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    .timeline {
+      position: relative;
+      height: 240px;
       border: 1px solid #ccc;
-      margin-top: 40px;
+      min-width: 1000px;
     }
 
     .session {
@@ -42,24 +52,47 @@
       z-index: 2;
     }
 
-    .time-label {
+    .time-label, .status-label {
       margin-top: 10px;
       font-weight: bold;
+    }
+
+    .hour-mark {
+      position: absolute;
+      top: 190px;
+      height: 10px;
+      border-left: 1px solid #888;
+      color: #333;
+      font-size: 10px;
+      text-align: center;
+    }
+
+    .live-clock {
+      font-family: monospace;
+      font-size: 18px;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <h2>Forex Market Sessions Timeline (WIB)</h2>
-  <div class="timeline" id="timeline">
-    <div class="cursor" id="cursor"></div>
+  <div class="live-clock" id="live-clock"></div>
+  <div class="timeline-container">
+    <div class="timeline" id="timeline">
+      <div class="cursor" id="cursor"></div>
+    </div>
   </div>
   <div class="time-label" id="current-time-label"></div>
+  <div class="status-label" id="status-label"></div>
 
   <script>
     const timeline = document.getElementById('timeline');
     const cursor = document.getElementById('cursor');
     const timeLabel = document.getElementById('current-time-label');
-    const timelineWidth = timeline.offsetWidth;
+    const statusLabel = document.getElementById('status-label');
+    const liveClock = document.getElementById('live-clock');
+
+    let timelineWidth = timeline.offsetWidth;
 
     const sessions = [
       { name: 'Sydney', startUTC: 21, endUTC: 6, class: 'Sydney' },
@@ -76,7 +109,19 @@
       return (hour / 24) * timelineWidth;
     }
 
+    function renderHourMarks() {
+      for (let i = 0; i <= 24; i++) {
+        const hourMark = document.createElement('div');
+        hourMark.classList.add('hour-mark');
+        hourMark.style.left = toPixels(i) + 'px';
+        hourMark.innerText = i;
+        timeline.appendChild(hourMark);
+      }
+    }
+
     function renderSessions() {
+      timeline.querySelectorAll('.session').forEach(el => el.remove());
+
       sessions.forEach(session => {
         const startWIB = convertToWIB(session.startUTC);
         const endWIB = convertToWIB(session.endUTC);
@@ -89,7 +134,7 @@
           left = toPixels(startWIB);
           width = toPixels(endWIB - startWIB);
         } else {
-          // Session spans midnight
+          // Spans midnight
           left = toPixels(startWIB);
           width = toPixels(24 - startWIB) + toPixels(endWIB);
         }
@@ -101,21 +146,55 @@
       });
     }
 
-    function updateCursor() {
+    function getCurrentWIBTime() {
       const now = new Date();
       const wibHour = (now.getUTCHours() + 7) % 24;
       const wibMinutes = now.getUTCMinutes();
-      const totalHour = wibHour + wibMinutes / 60;
-
-      const cursorX = toPixels(totalHour);
-      cursor.style.left = cursorX + 'px';
-
-      timeLabel.innerText = `Current Time in Jakarta (WIB): ${String(wibHour).padStart(2, '0')}:${String(wibMinutes).padStart(2, '0')}`;
+      const seconds = now.getUTCSeconds();
+      return { hour: wibHour, minutes: wibMinutes, seconds };
     }
 
+    function updateClockAndCursor() {
+      const now = new Date();
+      const { hour, minutes, seconds } = getCurrentWIBTime();
+      const totalHour = hour + minutes / 60 + seconds / 3600;
+      const cursorX = toPixels(totalHour);
+
+      cursor.style.left = cursorX + 'px';
+      timeLabel.innerText = `Current Time in Jakarta (WIB): ${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      liveClock.innerText = now.toLocaleTimeString('en-GB', { hour12: false, timeZone: 'Asia/Jakarta' });
+
+      // Highlight active session
+      const activeSessions = sessions.filter(s => {
+        const start = convertToWIB(s.startUTC);
+        const end = convertToWIB(s.endUTC);
+        if (start < end) {
+          return totalHour >= start && totalHour < end;
+        } else {
+          return totalHour >= start || totalHour < end;
+        }
+      });
+
+      if (activeSessions.length > 0) {
+        statusLabel.innerText = `Active Session: ${activeSessions.map(s => s.name).join(', ')}`;
+      } else {
+        statusLabel.innerText = 'No active session currently.';
+      }
+
+      requestAnimationFrame(updateClockAndCursor);
+    }
+
+    function resizeHandler() {
+      timelineWidth = timeline.offsetWidth;
+      timeline.innerHTML = '';
+      renderHourMarks();
+      renderSessions();
+    }
+
+    renderHourMarks();
     renderSessions();
-    updateCursor();
-    setInterval(updateCursor, 60 * 1000); // update every minute
+    updateClockAndCursor();
+    window.addEventListener('resize', resizeHandler);
   </script>
 </body>
 </html>
