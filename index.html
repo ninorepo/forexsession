@@ -29,30 +29,41 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            clip-path: polygon(50% 50%, 100% 0, 100% 100%, 0% 100%, 0% 0);
             border-radius: 50%;
             z-index: 1;
+            clip-path: polygon(50% 50%, 100% 0, 100% 100%, 0% 100%, 0% 0);
+            transition: background-color 1s;
         }
 
-        /* Session colors */
-        .asia {
-            background-color: #28a745;
-            z-index: 1;
+        /* Each session layer's size */
+        .sydney {
+            width: 85%;
+            height: 85%;
+            background-color: transparent;
         }
 
-        .europe {
-            background-color: #ff9800;
-            z-index: 1;
+        .tokyo {
+            width: 70%;
+            height: 70%;
+            background-color: transparent;
         }
 
-        .us {
-            background-color: #2196f3;
-            z-index: 1;
+        .london {
+            width: 55%;
+            height: 55%;
+            background-color: transparent;
+        }
+
+        .new-york {
+            width: 40%;
+            height: 40%;
+            background-color: transparent;
         }
 
         .closed {
-            background-color: #000;
-            z-index: 1;
+            width: 25%;
+            height: 25%;
+            background-color: transparent;
         }
 
         .current-time-line {
@@ -75,26 +86,32 @@
             z-index: 3;
         }
 
-        .asia-label {
+        .sydney-label {
             transform: translate(-50%, -50%) rotate(0deg);
             left: 50%;
             top: 50%;
         }
 
-        .europe-label {
+        .tokyo-label {
             transform: translate(-50%, -50%) rotate(90deg);
             left: 50%;
             top: 50%;
         }
 
-        .us-label {
+        .london-label {
             transform: translate(-50%, -50%) rotate(180deg);
             left: 50%;
             top: 50%;
         }
 
-        .closed-label {
+        .new-york-label {
             transform: translate(-50%, -50%) rotate(270deg);
+            left: 50%;
+            top: 50%;
+        }
+
+        .closed-label {
+            transform: translate(-50%, -50%) rotate(360deg);
             left: 50%;
             top: 50%;
         }
@@ -112,18 +129,20 @@
 
     <div class="clock-container">
         <!-- Session Layers -->
-        <div class="session-layer asia"></div>
-        <div class="session-layer europe"></div>
-        <div class="session-layer us"></div>
+        <div class="session-layer sydney"></div>
+        <div class="session-layer tokyo"></div>
+        <div class="session-layer london"></div>
+        <div class="session-layer new-york"></div>
         <div class="session-layer closed"></div>
         
         <!-- Current Time Indicator -->
         <div class="current-time-line" id="current-time-line"></div>
         
         <!-- Session Labels -->
-        <div class="session-label asia-label">Asia (Tokyo)</div>
-        <div class="session-label europe-label">Europe (London)</div>
-        <div class="session-label us-label">US (New York)</div>
+        <div class="session-label sydney-label">Sydney</div>
+        <div class="session-label tokyo-label">Tokyo</div>
+        <div class="session-label london-label">London</div>
+        <div class="session-label new-york-label">New York</div>
         <div class="session-label closed-label">Closed</div>
     </div>
 
@@ -159,11 +178,13 @@
 
         function getSession(hour) {
             if (hour >= 0 && hour < 9) {
-                return 'Asia'; // Tokyo Session
-            } else if (hour >= 9 && hour < 17) {
-                return 'Europe'; // London Session
-            } else if (hour >= 17 && hour < 23) {
-                return 'US'; // New York Session
+                return 'Sydney'; // Sydney Session
+            } else if (hour >= 9 && hour < 12) {
+                return 'Tokyo'; // Tokyo Session
+            } else if (hour >= 12 && hour < 18) {
+                return 'London'; // London Session
+            } else if (hour >= 18 && hour < 23) {
+                return 'New York'; // New York Session
             } else {
                 return 'Closed'; // Market Closed
             }
@@ -171,11 +192,13 @@
 
         function getSessionColor(session) {
             switch (session) {
-                case 'Asia':
+                case 'Sydney':
+                    return '#ff5722';
+                case 'Tokyo':
                     return '#28a745';
-                case 'Europe':
+                case 'London':
                     return '#ff9800';
-                case 'US':
+                case 'New York':
                     return '#2196f3';
                 default:
                     return '#000';
@@ -189,15 +212,19 @@
                 layer.style.backgroundColor = 'transparent';
             });
 
+            // Highlight the current session
             switch (session) {
-                case 'Asia':
-                    document.querySelector('.asia').style.backgroundColor = '#28a745';
+                case 'Sydney':
+                    document.querySelector('.sydney').style.backgroundColor = '#ff5722';
                     break;
-                case 'Europe':
-                    document.querySelector('.europe').style.backgroundColor = '#ff9800';
+                case 'Tokyo':
+                    document.querySelector('.tokyo').style.backgroundColor = '#28a745';
                     break;
-                case 'US':
-                    document.querySelector('.us').style.backgroundColor = '#2196f3';
+                case 'London':
+                    document.querySelector('.london').style.backgroundColor = '#ff9800';
+                    break;
+                case 'New York':
+                    document.querySelector('.new-york').style.backgroundColor = '#2196f3';
                     break;
                 default:
                     document.querySelector('.closed').style.backgroundColor = '#000';
