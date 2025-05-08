@@ -24,18 +24,35 @@
             background-color: #fff;
         }
 
-        .clock {
+        /* Layers for each session */
+        .session-layer {
             position: absolute;
             width: 100%;
             height: 100%;
-            background: conic-gradient(
-                #28a745 0deg 8.33deg,  /* Asia Session (Tokyo) */
-                #ff9800 8.33deg 16.66deg, /* Europe Session (London) */
-                #2196f3 16.66deg 25deg, /* US Session (New York) */
-                #000 25deg 100deg /* Market Closed */
-            );
+            clip-path: polygon(50% 50%, 100% 0, 100% 100%, 0% 100%, 0% 0);
             border-radius: 50%;
-            transform: rotate(-90deg); /* Start from top */
+            z-index: 1;
+        }
+
+        /* Individual session colors */
+        .asia {
+            background-color: #28a745;
+            transform: rotate(0deg);
+        }
+
+        .europe {
+            background-color: #ff9800;
+            transform: rotate(90deg);
+        }
+
+        .us {
+            background-color: #2196f3;
+            transform: rotate(180deg);
+        }
+
+        .closed {
+            background-color: #000;
+            transform: rotate(270deg);
         }
 
         .current-time-line {
@@ -47,6 +64,7 @@
             background-color: #000;
             transform-origin: 50% 100%;
             transition: transform 1s;
+            z-index: 2;
         }
 
         .session-label {
@@ -54,27 +72,28 @@
             font-size: 14px;
             font-weight: bold;
             color: #fff;
+            z-index: 3;
         }
 
-        .asia {
+        .asia-label {
             transform: translate(-50%, -50%) rotate(0deg);
             left: 50%;
             top: 50%;
         }
 
-        .europe {
+        .europe-label {
             transform: translate(-50%, -50%) rotate(90deg);
             left: 50%;
             top: 50%;
         }
 
-        .us {
+        .us-label {
             transform: translate(-50%, -50%) rotate(180deg);
             left: 50%;
             top: 50%;
         }
 
-        .closed {
+        .closed-label {
             transform: translate(-50%, -50%) rotate(270deg);
             left: 50%;
             top: 50%;
@@ -92,13 +111,20 @@
     <h1>Forex Session Time (WIB)</h1>
 
     <div class="clock-container">
-        <div class="clock"></div>
+        <!-- Session Layers -->
+        <div class="session-layer asia"></div>
+        <div class="session-layer europe"></div>
+        <div class="session-layer us"></div>
+        <div class="session-layer closed"></div>
+        
+        <!-- Current Time Indicator -->
         <div class="current-time-line" id="current-time-line"></div>
-        <!-- Sessions Labels -->
-        <div class="session-label asia">Asia (Tokyo)</div>
-        <div class="session-label europe">Europe (London)</div>
-        <div class="session-label us">US (New York)</div>
-        <div class="session-label closed">Closed</div>
+        
+        <!-- Session Labels -->
+        <div class="session-label asia-label">Asia (Tokyo)</div>
+        <div class="session-label europe-label">Europe (London)</div>
+        <div class="session-label us-label">US (New York)</div>
+        <div class="session-label closed-label">Closed</div>
     </div>
 
     <div class="time" id="current-time"></div>
@@ -120,11 +146,10 @@
             const session = getSession(hours);
             const sessionColor = getSessionColor(session);
 
-            // Update the session color and time
-            document.querySelector('.clock').style.background = sessionColor;
+            // Update the current time display
             document.getElementById("current-time").innerHTML = `Current Time (WIB): ${jakartaTime.toLocaleTimeString()}`;
 
-            // Update current time line
+            // Update current time line rotation
             const timeAngle = (hours % 24 + minutes / 60 + seconds / 3600) * 15; // 360° / 24 hours = 15° per hour
             document.getElementById("current-time-line").style.transform = `rotate(${timeAngle}deg)`;
         }
