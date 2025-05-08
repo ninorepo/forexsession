@@ -10,86 +10,76 @@
       padding: 20px;
       background: #f4f4f4;
     }
-
+    h2 {
+      text-align: center;
+    }
     .timeline-container {
-      position: relative;
-      width: 100%;
       max-width: 1000px;
-      height: 200px;
       margin: auto;
+    }
+    .session-row {
+      position: relative;
+      height: 50px;
+      margin: 10px 0;
       border: 1px solid #ccc;
       background: #fff;
-      overflow: hidden;
     }
-
-    .session {
+    .session-bar {
       position: absolute;
       height: 100%;
-      opacity: 0.7;
       color: white;
       padding: 5px;
-      font-weight: bold;
       box-sizing: border-box;
+      font-weight: bold;
+      font-size: 14px;
     }
-
     .Sydney   { background: #1abc9c; }
     .Tokyo    { background: #3498db; }
     .London   { background: #9b59b6; }
     .NewYork  { background: #e67e22; }
 
-    .cursor-line {
+    .cursor-line,
+    .now-line {
       position: absolute;
       width: 1px;
       height: 100%;
-      background: black;
       top: 0;
-      display: none;
+      background: black;
+      z-index: 10;
+    }
+
+    .now-line {
+      background: red;
     }
 
     .time-label {
       position: absolute;
-      top: 100%;
+      top: -20px;
       transform: translateX(-50%);
-      margin-top: 5px;
       background: #000;
       color: #fff;
-      padding: 2px 6px;
+      padding: 2px 5px;
       font-size: 12px;
       display: none;
       white-space: nowrap;
     }
-
-    @media (max-width: 600px) {
-      .timeline-container {
-        height: 150px;
-      }
-    }
   </style>
 </head>
 <body>
-  <h2>Forex Trading Sessions in WIB (Waktu Indonesia Barat)</h2>
+  <h2>Forex Sessions - WIB Time (UTC+7)</h2>
   <div class="timeline-container" id="timeline">
-    <!-- Sessions will be injected by JS -->
-    <div class="cursor-line" id="cursorLine"></div>
-    <div class="time-label" id="timeLabel"></div>
+    <!-- Session rows will be injected -->
   </div>
 
   <script>
+    const WIB_OFFSET = 7;
     const timeline = document.getElementById('timeline');
-    const cursorLine = document.getElementById('cursorLine');
-    const timeLabel = document.getElementById('timeLabel');
 
-    const WIB_OFFSET = 7; // UTC+7
-
-    // Detect if DST is active for a given zone
     function isDST(date, timeZone) {
       const stdDate = new Date(date.toLocaleString("en-US", { timeZone }));
       const jan = new Date(Date.UTC(date.getFullYear(), 0, 1));
       const jul = new Date(Date.UTC(date.getFullYear(), 6, 1));
-      const stdOffset = Math.max(
-        jan.getTimezoneOffset(),
-        jul.getTimezoneOffset()
-      );
+      const stdOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
       return stdDate.getTimezoneOffset() < stdOffset;
     }
 
@@ -97,65 +87,88 @@
     const londonDST = isDST(now, 'Europe/London');
     const nyDST = isDST(now, 'America/New_York');
 
-    // Session definitions in UTC
     const sessionsUTC = [
       { name: "Sydney",  start: 22, end: 7, color: "Sydney" },
       { name: "Tokyo",   start: 0,  end: 9, color: "Tokyo" },
-      { name: "London",  start: londonDST ? 7 : 8,  end: londonDST ? 16 : 17, color: "London" },
+      { name: "London",  start: londonDST ? 7 : 8, end: londonDST ? 16 : 17, color: "London" },
       { name: "New York",start: nyDST ? 12 : 13, end: nyDST ? 21 : 22, color: "NewYork" }
     ];
 
-    // Convert sessions to WIB
     const sessionsWIB = sessionsUTC.map(session => {
       const start = (session.start + WIB_OFFSET) % 24;
       const end = (session.end + WIB_OFFSET) % 24;
       return { ...session, startWIB: start, endWIB: end };
     });
 
-    // Render sessions
     sessionsWIB.forEach(session => {
-      const div = document.createElement('div');
-      div.className = `session ${session.color}`;
+      const row = document.createElement('div');
+      row.className = 'session-row';
+
+      const bar = document.createElement('div');
+      bar.className = `session-bar ${session.color}`;
+      let start = session.startWIB;
+      let end = session.endWIB;
       let width, left;
-      if (session.endWIB > session.startWIB) {
-        width = ((session.endWIB - session.startWIB) / 24) * 100;
-        left = (session.startWIB / 24) * 100;
+      if (end > start) {
+        width = ((end - start) / 24) * 100;
+        left = (start / 24) * 100;
       } else {
-        // overnight session (e.g., New York 20:00–05:00 WIB)
-        width = ((24 - session.startWIB + session.endWIB) / 24) * 100;
-        left = (session.startWIB / 24) * 100;
+        width = ((24 - start + end) / 24) * 100;
+        left = (start / 24) * 100;
       }
-      div.style.left = `${left}%`;
-      div.style.width = `${width}%`;
-      div.innerHTML = `${session.name}<br>${String(session.startWIB).padStart(2, '0')}:00 - ${String(session.endWIB).padStart(2, '0')}:00`;
-      timeline.appendChild(div);
-    });
+      bar.style.left = `${left}%`;
+      bar.style.width = `${width}%`;
+      bar.textContent = `${session.name} ${String(start).padStart(2, '0')}:00 - ${String(end).padStart(2, '0')}:00`;
 
-    // Mouse move behavior
-    timeline.addEventListener('mousemove', (e) => {
-      const rect = timeline.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const percent = x / rect.width;
-      const totalMinutes = percent * 1440;
-      let hours = Math.floor(totalMinutes / 60);
-      let minutes = Math.round((totalMinutes % 60) / 5) * 5;
+      const hoverLine = document.createElement('div');
+      hoverLine.className = 'cursor-line';
 
-      if (minutes === 60) {
-        minutes = 0;
-        hours = (hours + 1) % 24;
+      const nowLine = document.createElement('div');
+      nowLine.className = 'now-line';
+
+      const timeLabel = document.createElement('div');
+      timeLabel.className = 'time-label';
+
+      row.appendChild(bar);
+      row.appendChild(hoverLine);
+      row.appendChild(nowLine);
+      row.appendChild(timeLabel);
+      timeline.appendChild(row);
+
+      row.addEventListener('mousemove', (e) => {
+        const rect = row.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const percent = x / rect.width;
+        const minutes = percent * 1440;
+        let hour = Math.floor(minutes / 60);
+        let mins = Math.round((minutes % 60) / 5) * 5;
+        if (mins === 60) { mins = 0; hour = (hour + 1) % 24; }
+
+        hoverLine.style.left = `${x}px`;
+        hoverLine.style.display = 'block';
+
+        timeLabel.textContent = `${String(hour).padStart(2, '0')}:${String(mins).padStart(2, '0')} WIB`;
+        timeLabel.style.left = `${x}px`;
+        timeLabel.style.display = 'block';
+      });
+
+      row.addEventListener('mouseleave', () => {
+        hoverLine.style.display = 'none';
+        timeLabel.style.display = 'none';
+      });
+
+      // Set current time line position
+      function updateNowLine() {
+        const now = new Date();
+        const wibHours = (now.getUTCHours() + WIB_OFFSET) % 24;
+        const wibMinutes = now.getUTCMinutes();
+        const totalMinutes = wibHours * 60 + wibMinutes;
+        const percent = totalMinutes / 1440;
+        nowLine.style.left = `${percent * 100}%`;
       }
 
-      cursorLine.style.left = `${x}px`;
-      cursorLine.style.display = 'block';
-
-      timeLabel.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} WIB`;
-      timeLabel.style.left = `${x}px`;
-      timeLabel.style.display = 'block';
-    });
-
-    timeline.addEventListener('mouseleave', () => {
-      cursorLine.style.display = 'none';
-      timeLabel.style.display = 'none';
+      updateNowLine();
+      setInterval(updateNowLine, 60000);
     });
   </script>
 </body>
