@@ -2,61 +2,120 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Forex Market Sessions in Jakarta Time (WIB)</title>
+  <title>Forex Sessions Timeline (WIB)</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { padding: 10px; border: 1px solid #ccc; text-align: center; }
-    th { background-color: #f2f2f2; }
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+
+    .timeline {
+      position: relative;
+      width: 100%;
+      height: 200px;
+      border: 1px solid #ccc;
+      margin-top: 40px;
+    }
+
+    .session {
+      position: absolute;
+      height: 40px;
+      border-radius: 4px;
+      color: white;
+      padding-left: 5px;
+      line-height: 40px;
+      font-weight: bold;
+    }
+
+    .Sydney { background: #3f51b5; top: 0; }
+    .Tokyo { background: #4caf50; top: 50px; }
+    .London { background: #ff9800; top: 100px; }
+    .NewYork { background: #f44336; top: 150px; }
+
+    .cursor {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: black;
+      z-index: 2;
+    }
+
+    .time-label {
+      margin-top: 10px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <h1>Forex Market Sessions</h1>
-  <h2>Converted to Jakarta Time (WIB)</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Session</th>
-        <th>Open (WIB)</th>
-        <th>Close (WIB)</th>
-      </tr>
-    </thead>
-    <tbody id="session-table-body">
-    </tbody>
-  </table>
+  <h2>Forex Market Sessions Timeline (WIB)</h2>
+  <div class="timeline" id="timeline">
+    <div class="cursor" id="cursor"></div>
+  </div>
+  <div class="time-label" id="current-time-label"></div>
 
   <script>
+    const timeline = document.getElementById('timeline');
+    const cursor = document.getElementById('cursor');
+    const timeLabel = document.getElementById('current-time-label');
+    const timelineWidth = timeline.offsetWidth;
+
     const sessions = [
-      { name: 'Sydney', openUTC: 21, closeUTC: 6 },
-      { name: 'Tokyo', openUTC: 0, closeUTC: 9 },
-      { name: 'London', openUTC: 7, closeUTC: 16 },
-      { name: 'New York', openUTC: 12, closeUTC: 21 },
+      { name: 'Sydney', startUTC: 21, endUTC: 6, class: 'Sydney' },
+      { name: 'Tokyo', startUTC: 0, endUTC: 9, class: 'Tokyo' },
+      { name: 'London', startUTC: 7, endUTC: 16, class: 'London' },
+      { name: 'New York', startUTC: 12, endUTC: 21, class: 'NewYork' },
     ];
 
-    function convertUTCtoWIB(utcHour) {
-      return (utcHour + 7) % 24; // WIB is UTC+7
+    function convertToWIB(hour) {
+      return (hour + 7) % 24;
     }
 
-    function formatHour(hour) {
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      const displayHour = hour % 12 || 12;
-      return `${displayHour}:00 ${ampm}`;
+    function toPixels(hour) {
+      return (hour / 24) * timelineWidth;
     }
 
-    const tableBody = document.getElementById('session-table-body');
+    function renderSessions() {
+      sessions.forEach(session => {
+        const startWIB = convertToWIB(session.startUTC);
+        const endWIB = convertToWIB(session.endUTC);
+        const sessionDiv = document.createElement('div');
+        sessionDiv.classList.add('session', session.class);
 
-    sessions.forEach(session => {
-      const openWIB = convertUTCtoWIB(session.openUTC);
-      const closeWIB = convertUTCtoWIB(session.closeUTC);
+        let left, width;
 
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${session.name}</td>
-        <td>${formatHour(openWIB)}</td>
-        <td>${formatHour(closeWIB)}</td>
-      `;
-      tableBody.appendChild(row);
-    });
+        if (startWIB < endWIB) {
+          left = toPixels(startWIB);
+          width = toPixels(endWIB - startWIB);
+        } else {
+          // Session spans midnight
+          left = toPixels(startWIB);
+          width = toPixels(24 - startWIB) + toPixels(endWIB);
+        }
+
+        sessionDiv.style.left = left + 'px';
+        sessionDiv.style.width = width + 'px';
+        sessionDiv.innerText = session.name;
+        timeline.appendChild(sessionDiv);
+      });
+    }
+
+    function updateCursor() {
+      const now = new Date();
+      const wibHour = (now.getUTCHours() + 7) % 24;
+      const wibMinutes = now.getUTCMinutes();
+      const totalHour = wibHour + wibMinutes / 60;
+
+      const cursorX = toPixels(totalHour);
+      cursor.style.left = cursorX + 'px';
+
+      timeLabel.innerText = `Current Time in Jakarta (WIB): ${String(wibHour).padStart(2, '0')}:${String(wibMinutes).padStart(2, '0')}`;
+    }
+
+    renderSessions();
+    updateCursor();
+    setInterval(updateCursor, 60 * 1000); // update every minute
   </script>
 </body>
 </html>
