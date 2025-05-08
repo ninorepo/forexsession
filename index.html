@@ -3,23 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Forex Session Clock (WIB)</title>
+  <title>Interactive Forex Clock (WIB)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       background: #f4f4f4;
-      padding: 20px;
     }
+
     svg {
       max-width: 90vmin;
       height: auto;
     }
+
     .clock-hand {
       stroke: #000;
       stroke-width: 2;
       transform-origin: 150px 150px;
       transition: transform 0.5s ease-in-out;
+    }
+
+    .session-label {
+      font-size: 12px;
+      fill: #333;
+    }
+
+    .active {
+      stroke-width: 24 !important;
+      filter: brightness(1.3);
     }
   </style>
 </head>
@@ -27,38 +38,26 @@
 
   <h2>Forex Session Clock (WIB)</h2>
   <svg viewBox="0 0 300 300">
-    <!-- Circular background -->
-    <circle cx="150" cy="150" r="100" fill="#fff" stroke="#ccc" stroke-width="2" />
+    <!-- Background Circle -->
+    <circle cx="150" cy="150" r="100" fill="#fff" stroke="#ccc" stroke-width="2"/>
 
-    <!-- Session Arcs (24h = 360deg → 1h = 15deg) -->
-    <!-- Sydney: 5 AM – 2 PM WIB = 75deg to 150deg -->
-    <path d="M214.64 64.64
-             A100 100 0 0 1 85.35 35.35"
-          fill="none" stroke="#ff5722" stroke-width="20"/>
+    <!-- Session Arcs -->
+    <path id="sydney" d="M243.3 103.3 A100 100 0 0 1 56.7 103.3" fill="none" stroke="#ff5722" stroke-width="20"/>
+    <path id="tokyo" d="M225 75 A100 100 0 0 1 75 225" fill="none" stroke="#28a745" stroke-width="20"/>
+    <path id="london" d="M103.3 243.3 A100 100 0 0 1 196.7 243.3" fill="none" stroke="#ff9800" stroke-width="20"/>
+    <path id="newyork" d="M225 225 A100 100 0 1 1 75 75" fill="none" stroke="#2196f3" stroke-width="20"/>
 
-    <!-- Tokyo: 7 AM – 4 PM WIB = 105deg to 180deg -->
-    <path d="M185.35 35.35
-             A100 100 0 0 1 35.35 114.64"
-          fill="none" stroke="#28a745" stroke-width="20"/>
+    <!-- Clock hand -->
+    <line id="clock-hand" x1="150" y1="150" x2="150" y2="50" class="clock-hand"/>
 
-    <!-- London: 3 PM – 12 AM WIB = 195deg to 270deg -->
-    <path d="M35.35 185.35
-             A100 100 0 0 1 185.35 264.64"
-          fill="none" stroke="#ff9800" stroke-width="20"/>
+    <!-- Center Dot -->
+    <circle cx="150" cy="150" r="4" fill="#000"/>
 
-    <!-- New York: 8 PM – 5 AM WIB = 300deg to 75deg (wraps around) -->
-    <path d="
-        M264.64 214.64
-        A100 100 0 0 1 214.64 264.64
-        A100 100 0 0 1 114.64 264.64
-        A100 100 0 0 1 35.36 214.64"
-          fill="none" stroke="#2196f3" stroke-width="20"/>
-
-    <!-- Rotating Line -->
-    <line id="clock-hand" x1="150" y1="150" x2="150" y2="50" class="clock-hand" />
-
-    <!-- Center dot -->
-    <circle cx="150" cy="150" r="4" fill="#000" />
+    <!-- Labels -->
+    <text x="150" y="30" class="session-label">Sydney</text>
+    <text x="255" y="90" class="session-label">Tokyo</text>
+    <text x="150" y="275" class="session-label">London</text>
+    <text x="45" y="90" class="session-label">New York</text>
   </svg>
 
   <div id="time" style="margin-top: 10px; font-size: 16px;"></div>
@@ -68,23 +67,34 @@
       return new Date(date.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
     }
 
+    function getActiveSession(hour) {
+      if (hour >= 5 && hour < 14) return "sydney";
+      if (hour >= 7 && hour < 16) return "tokyo";
+      if (hour >= 15 && hour < 24) return "london";
+      return (hour >= 0 && hour < 5) || (hour >= 20 && hour < 24) ? "newyork" : "none";
+    }
+
     function updateClock() {
       const now = convertToJakartaTime(new Date());
       const hours = now.getHours();
       const minutes = now.getMinutes();
       const seconds = now.getSeconds();
 
-      // Time in decimal hours
-      const decimalTime = hours + minutes / 60 + seconds / 3600;
-
-      // Calculate angle (360deg = 24h → 15deg per hour)
-      const angle = decimalTime * 15;
-
-      const hand = document.getElementById("clock-hand");
-      hand.style.transform = `rotate(${angle}deg)`;
+      // Rotate clock hand
+      const decimal = hours + minutes / 60 + seconds / 3600;
+      const angle = decimal * 15; // 15° per hour
+      document.getElementById("clock-hand").style.transform = `rotate(${angle}deg)`;
 
       // Show time
-      document.getElementById("time").textContent = "Current WIB Time: " + now.toLocaleTimeString();
+      document.getElementById("time").textContent = `Current WIB Time: ${now.toLocaleTimeString()}`;
+
+      // Highlight active session
+      const sessions = ["sydney", "tokyo", "london", "newyork"];
+      const active = getActiveSession(hours);
+      sessions.forEach(id => {
+        const path = document.getElementById(id);
+        path.classList.toggle("active", id === active);
+      });
     }
 
     updateClock();
