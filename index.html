@@ -26,7 +26,7 @@
     .session-row {
       position: relative;
       height: 60px;
-      margin: 15px 0;
+      margin: 0;
       border: 1px solid #ccc;
       background: #fff;
       overflow: hidden;
@@ -116,7 +116,9 @@
     // Function to get current WIB time
     function getCurrentWIBTime() {
       const now = new Date();
-      now.setUTCHours(now.getUTCHours() + WIB_OFFSET);
+      const utcHours = now.getUTCHours();
+      const utcMinutes = now.getUTCMinutes();
+      now.setHours(utcHours + WIB_OFFSET, utcMinutes);
       return now;
     }
 
