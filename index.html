@@ -158,7 +158,7 @@
 
       bar.style.left = `${left}%`;
       bar.style.width = `${width}%`;
-      bar.textContent = `${String(start).padStart(2, '0')}:00 - ${String(end).padStart(2, '0')}:00 WIB`;
+      bar.textContent = `${session.name}`;
 
       const utcLabel = document.createElement('div');
       utcLabel.className = 'time-label';
