@@ -31,38 +31,36 @@
             height: 100%;
             border-radius: 50%;
             z-index: 1;
-            clip-path: polygon(50% 50%, 100% 0, 100% 100%, 0% 100%, 0% 0);
             transition: background-color 1s;
         }
 
-        /* Each session layer's size */
-        .sydney {
-            width: 85%;
-            height: 85%;
+        .session-layer.sydney {
+            width: 90%;
+            height: 90%;
             background-color: transparent;
         }
 
-        .tokyo {
-            width: 70%;
-            height: 70%;
+        .session-layer.tokyo {
+            width: 75%;
+            height: 75%;
             background-color: transparent;
         }
 
-        .london {
-            width: 55%;
-            height: 55%;
+        .session-layer.london {
+            width: 60%;
+            height: 60%;
             background-color: transparent;
         }
 
-        .new-york {
-            width: 40%;
-            height: 40%;
+        .session-layer.new-york {
+            width: 45%;
+            height: 45%;
             background-color: transparent;
         }
 
-        .closed {
-            width: 25%;
-            height: 25%;
+        .session-layer.closed {
+            width: 30%;
+            height: 30%;
             background-color: transparent;
         }
 
@@ -87,31 +85,31 @@
         }
 
         .sydney-label {
-            transform: translate(-50%, -50%) rotate(0deg);
+            transform: translate(-50%, -50%);
             left: 50%;
             top: 50%;
         }
 
         .tokyo-label {
-            transform: translate(-50%, -50%) rotate(90deg);
+            transform: translate(-50%, -50%);
             left: 50%;
             top: 50%;
         }
 
         .london-label {
-            transform: translate(-50%, -50%) rotate(180deg);
+            transform: translate(-50%, -50%);
             left: 50%;
             top: 50%;
         }
 
         .new-york-label {
-            transform: translate(-50%, -50%) rotate(270deg);
+            transform: translate(-50%, -50%);
             left: 50%;
             top: 50%;
         }
 
         .closed-label {
-            transform: translate(-50%, -50%) rotate(360deg);
+            transform: translate(-50%, -50%);
             left: 50%;
             top: 50%;
         }
@@ -163,7 +161,6 @@
             const seconds = jakartaTime.getSeconds();
 
             const session = getSession(hours);
-            const sessionColor = getSessionColor(session);
 
             // Update the current time display
             document.getElementById("current-time").innerHTML = `Current Time (WIB): ${jakartaTime.toLocaleTimeString()}`;
@@ -187,21 +184,6 @@
                 return 'New York'; // New York Session
             } else {
                 return 'Closed'; // Market Closed
-            }
-        }
-
-        function getSessionColor(session) {
-            switch (session) {
-                case 'Sydney':
-                    return '#ff5722';
-                case 'Tokyo':
-                    return '#28a745';
-                case 'London':
-                    return '#ff9800';
-                case 'New York':
-                    return '#2196f3';
-                default:
-                    return '#000';
             }
         }
 
