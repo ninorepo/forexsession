@@ -2,343 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Forex Sessions - WIB Time</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forex Market Sessions in Jakarta Time (WIB)</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      margin: 0;
-      padding: 20px;
-    }
-    h2, h3 {
-      text-align: center;
-    }
-    #clock {
-      text-align: center;
-      font-size: 20px;
-      margin-bottom: 15px;
-    }
-
-    .timeline-wrapper {
-      display: flex;
-      align-items: flex-start;
-    }
-
-    .session-labels {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      margin-right: 10px;
-      font-weight: bold;
-      font-size: 14px;
-      line-height: 60px;
-    }
-
-    .session-labels div {
-      height: 60px;
-      width: 100px;
-      text-align: right;
-      padding-right: 10px;
-    }
-
-    .timeline-scroll {
-      overflow-x: auto;
-      width: 100%;
-    }
-
-    .timeline-container {
-      min-width: 1000px;
-    }
-
-    .session-row {
-      position: relative;
-      height: 60px;
-      margin: 0;
-      border: 1px solid #ccc;
-      background: #fff;
-      overflow: hidden;
-    }
-
-    .session-bar {
-      position: absolute;
-      height: 100%;
-      color: white;
-      padding: 5px;
-      box-sizing: border-box;
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    .session-bar.active {
-      box-shadow: 0 0 10px 3px rgba(255, 0, 0, 0.5);
-      border: 2px solid #fff;
-    }
-
-    .Sydney   { background: #1abc9c; }
-    .Tokyo    { background: #3498db; }
-    .London   { background: #9b59b6; }
-    .NewYork  { background: #e67e22; }
-
-    .cursor-line,
-    .now-line {
-      position: absolute;
-      width: 1px;
-      height: 100%;
-      top: 0;
-      z-index: 10;
-    }
-
-    .cursor-line {
-      background: black;
-    }
-    .now-line {
-      background: red;
-    }
-
-    .time-label {
-      position: absolute;
-      top: -22px;
-      transform: translateX(-50%);
-      background: #000;
-      color: #fff;
-      padding: 2px 5px;
-      font-size: 12px;
-      white-space: nowrap;
-      display: none;
-    }
-
-    .session-info {
-      font-size: 14px;
-      margin-bottom: 5px;
-      text-align: center;
-    }
-
-    .alert-bar {
-      text-align: center;
-      font-weight: bold;
-      padding: 10px;
-      background: #fffbcc;
-      border: 1px solid #f1c40f;
-      margin-top: 15px;
-    }
-
-    .clock-ruler {
-      display: flex;
-      position: relative;
-      height: 20px;
-      margin-top: 10px;
-      font-size: 12px;
-      color: #333;
-      justify-content: space-between;
-      width: 100%;
-      box-sizing: border-box;
-      padding: 0 2px;
-      min-width: 1000px;
-    }
-
-    .clock-hour {
-      flex: 1;
-      text-align: center;
-      position: relative;
-    }
-
-    .clock-hour::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 50%;
-      height: 8px;
-      width: 1px;
-      background: #333;
-      transform: translateX(-50%);
-    }
-
-    @media (max-width: 600px) {
-      .session-bar {
-        font-size: 12px;
-        padding: 3px;
-      }
-      .session-info {
-        font-size: 12px;
-      }
-    }
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 10px; border: 1px solid #ccc; text-align: center; }
+    th { background-color: #f2f2f2; }
   </style>
 </head>
 <body>
-  <h2>Forex Trading Sessions (WIB)</h2>
-  <div id="clock"></div>
-  <div class="alert-bar" id="alertBar">Hover over the chart to see time and session status.</div>
-
-  <div class="timeline-wrapper">
-    <div class="session-labels" id="sessionLabels"></div>
-    <div class="timeline-scroll">
-      <div class="timeline-container" id="timeline"></div>
-      <div class="clock-ruler" id="clockRuler"></div>
-    </div>
-  </div>
+  <h1>Forex Market Sessions</h1>
+  <h2>Converted to Jakarta Time (WIB)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Session</th>
+        <th>Open (WIB)</th>
+        <th>Close (WIB)</th>
+      </tr>
+    </thead>
+    <tbody id="session-table-body">
+    </tbody>
+  </table>
 
   <script>
-    const WIB_OFFSET = 7;  // WIB is UTC+7
-    const timeline = document.getElementById('timeline');
-    const alertBar = document.getElementById('alertBar');
-    const sessionLabels = document.getElementById('sessionLabels');
-
-    function getCurrentWIBTime() {
-      const now = new Date();
-      const utcHours = now.getUTCHours();
-      const utcMinutes = now.getUTCMinutes();
-      now.setHours(utcHours + WIB_OFFSET, utcMinutes);
-      return now;
-    }
-
-    const sessionsUTC = [
-      { name: "Sydney",  start: 22, end: 7, color: "Sydney", utc: "+10" },
-      { name: "Tokyo",   start: 0,  end: 9, color: "Tokyo", utc: "+09" },
-      { name: "London",  start: 8,  end: 17, color: "London", utc: "+00" },
-      { name: "New York",start: 13, end: 22, color: "NewYork", utc: "-05" }
+    const sessions = [
+      { name: 'Sydney', openUTC: 21, closeUTC: 6 },
+      { name: 'Tokyo', openUTC: 0, closeUTC: 9 },
+      { name: 'London', openUTC: 7, closeUTC: 16 },
+      { name: 'New York', openUTC: 12, closeUTC: 21 },
     ];
 
-    const sessionsWIB = sessionsUTC.map(session => {
-      const start = (session.start + WIB_OFFSET) % 24;
-      const end = (session.end + WIB_OFFSET) % 24;
-      return { ...session, startWIB: start, endWIB: end };
+    function convertUTCtoWIB(utcHour) {
+      return (utcHour + 7) % 24; // WIB is UTC+7
+    }
+
+    function formatHour(hour) {
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 || 12;
+      return `${displayHour}:00 ${ampm}`;
+    }
+
+    const tableBody = document.getElementById('session-table-body');
+
+    sessions.forEach(session => {
+      const openWIB = convertUTCtoWIB(session.openUTC);
+      const closeWIB = convertUTCtoWIB(session.closeUTC);
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${session.name}</td>
+        <td>${formatHour(openWIB)}</td>
+        <td>${formatHour(closeWIB)}</td>
+      `;
+      tableBody.appendChild(row);
     });
-
-    sessionsWIB.forEach(session => {
-      const label = document.createElement('div');
-      label.textContent = session.name;
-      sessionLabels.appendChild(label);
-
-      const row = document.createElement('div');
-      row.className = 'session-row';
-
-      const bar = document.createElement('div');
-      bar.className = `session-bar ${session.color}`;
-      bar.textContent = `${session.name}`;
-
-      let start = session.startWIB;
-      let end = session.endWIB;
-      let width, left;
-      if (end > start) {
-        width = ((end - start) / 24) * 100;
-        left = (start / 24) * 100;
-      } else {
-        width = ((24 - start + end) / 24) * 100;
-        left = (start / 24) * 100;
-      }
-
-      bar.style.left = `${left}%`;
-      bar.style.width = `${width}%`;
-
-      const utcLabel = document.createElement('div');
-      utcLabel.className = 'time-label';
-      utcLabel.textContent = `UTC${session.utc}`;
-      bar.appendChild(utcLabel);
-
-      const cursorLine = document.createElement('div');
-      cursorLine.className = 'cursor-line';
-
-      const nowLine = document.createElement('div');
-      nowLine.className = 'now-line';
-
-      const timeLabel = document.createElement('div');
-      timeLabel.className = 'time-label';
-
-      row.appendChild(bar);
-      row.appendChild(cursorLine);
-      row.appendChild(nowLine);
-      row.appendChild(timeLabel);
-      timeline.appendChild(row);
-
-      row.addEventListener('mousemove', (e) => {
-        const rect = row.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const percent = x / rect.width;
-        const totalMinutes = percent * 1440;
-        let hour = Math.floor(totalMinutes / 60);
-        let mins = Math.round((totalMinutes % 60) / 5) * 5;
-        if (mins === 60) { mins = 0; hour = (hour + 1) % 24; }
-
-        cursorLine.style.left = `${x}px`;
-        cursorLine.style.display = 'block';
-
-        timeLabel.textContent = `${String(hour).padStart(2, '0')}:${String(mins).padStart(2, '0')} WIB`;
-        timeLabel.style.left = `${x}px`;
-        timeLabel.style.display = 'block';
-
-        const activeSessions = sessionsWIB.filter(s => isTimeInSession(hour, mins, s.startWIB, s.endWIB));
-        if (activeSessions.length > 0) {
-          alertBar.textContent = `At ${String(hour).padStart(2, '0')}:${String(mins).padStart(2, '0')} WIB → Active: ${activeSessions.map(s => s.name).join(", ")}`;
-        } else {
-          alertBar.textContent = `At ${String(hour).padStart(2, '0')}:${String(mins).padStart(2, '0')} WIB → No active session`;
-        }
-      });
-
-      row.addEventListener('mouseleave', () => {
-        cursorLine.style.display = 'none';
-        timeLabel.style.display = 'none';
-        alertBar.textContent = "Hover over the chart to see time and session status.";
-      });
-
-      function updateNowLine() {
-        const now = getCurrentWIBTime();
-        const wibH = now.getHours();
-        const wibM = now.getMinutes();
-        const totalMinutes = wibH * 60 + wibM;
-        const percent = totalMinutes / 1440;
-        nowLine.style.left = `${percent * 100}%`;
-      }
-
-      function toggleActiveClass() {
-        if (checkIfOpen(session)) {
-          bar.classList.add('active');
-        } else {
-          bar.classList.remove('active');
-        }
-      }
-
-      updateNowLine();
-      toggleActiveClass();
-      setInterval(updateNowLine, 60000);
-      setInterval(toggleActiveClass, 60000);
-    });
-
-    function isTimeInSession(hour, minutes, startWIB, endWIB) {
-      const time = hour * 60 + minutes;
-      const start = startWIB * 60;
-      const end = endWIB * 60;
-      if (end < start) {
-        return time >= start || time < end;
-      }
-      return time >= start && time < end;
-    }
-
-    function checkIfOpen(session) {
-      const now = getCurrentWIBTime();
-      const hour = now.getHours();
-      const minutes = now.getMinutes();
-      return isTimeInSession(hour, minutes, session.startWIB, session.endWIB);
-    }
-
-    function updateClock() {
-      const now = getCurrentWIBTime();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const seconds = now.getSeconds();
-      document.getElementById('clock').textContent = `Current WIB Time: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
-
-    updateClock();
-    setInterval(updateClock, 1000);
-
-    const clockRuler = document.getElementById('clockRuler');
-    for (let i = 0; i < 24; i++) {
-      const hourDiv = document.createElement('div');
-      hourDiv.className = 'clock-hour';
-      hourDiv.textContent = `${String(i).padStart(2, '0')}:00`;
-      clockRuler.appendChild(hourDiv);
-    }
   </script>
 </body>
 </html>
