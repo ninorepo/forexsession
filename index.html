@@ -120,28 +120,15 @@
       return now;
     }
 
-    // DST calculation (not needed for WIB directly, but may be useful for other timezones)
-    function isDST(date, timeZone) {
-      const stdDate = new Date(date.toLocaleString("en-US", { timeZone }));
-      const jan = new Date(Date.UTC(date.getFullYear(), 0, 1));
-      const jul = new Date(Date.UTC(date.getFullYear(), 6, 1));
-      const stdOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
-      return stdDate.getTimezoneOffset() < stdOffset;
-    }
-
-    const now = new Date();
-    const londonDST = isDST(now, 'Europe/London');
-    const nyDST = isDST(now, 'America/New_York');
-
-    // Forex session data (using UTC offsets)
+    // Convert sessions to WIB
     const sessionsUTC = [
-      { name: "Sydney",  start: 22, end: 7, color: "Sydney", utc: "+10", dst: false },
-      { name: "Tokyo",   start: 0,  end: 9, color: "Tokyo", utc: "+09", dst: false },
-      { name: "London",  start: londonDST ? 7 : 8, end: londonDST ? 16 : 17, color: "London", utc: londonDST ? "+01" : "+00", dst: londonDST },
-      { name: "New York",start: nyDST ? 12 : 13, end: nyDST ? 21 : 22, color: "NewYork", utc: nyDST ? "-04" : "-05", dst: nyDST }
+      { name: "Sydney",  start: 22, end: 7, color: "Sydney", utc: "+10" },
+      { name: "Tokyo",   start: 0,  end: 9, color: "Tokyo", utc: "+09" },
+      { name: "London",  start: 8,  end: 17, color: "London", utc: "+00" },
+      { name: "New York",start: 13, end: 22, color: "NewYork", utc: "-05" }
     ];
 
-    // Convert sessions to WIB
+    // Convert sessions to WIB times
     const sessionsWIB = sessionsUTC.map(session => {
       const start = (session.start + WIB_OFFSET) % 24;
       const end = (session.end + WIB_OFFSET) % 24;
@@ -223,9 +210,9 @@
       });
 
       function updateNowLine() {
-        const now = new Date();
-        const wibH = (now.getUTCHours() + WIB_OFFSET) % 24;
-        const wibM = now.getUTCMinutes();
+        const now = getCurrentWIBTime();
+        const wibH = now.getHours();
+        const wibM = now.getMinutes();
         const totalMinutes = wibH * 60 + wibM;
         const percent = totalMinutes / 1440;
         nowLine.style.left = `${percent * 100}%`;
