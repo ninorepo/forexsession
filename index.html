@@ -24,17 +24,18 @@
       position: relative;
       height: 100vh;
       display: flex;
+      margin-left: 60px; /* Added to prevent overlap with time ruler */
     }
 
     .time-ruler {
-      position: absolute;
-      top: 0;
+      position: fixed; /* Changed to fixed so it doesn't shift content */
+      top: 50px; /* Offset to account for header height */
       left: 0;
       width: 60px;
-      height: 100%;
+      height: calc(100vh - 50px);
       border-right: 1px solid #ccc;
       background: #fff;
-      z-index: 1;
+      z-index: 10;
     }
 
     .time-label {
@@ -102,8 +103,8 @@
 <body>
   <div class="header" id="timeNow">WIB Time: --:--</div>
   <div class="notification" id="notification"></div>
+  <div class="time-ruler" id="ruler"></div>
   <div class="timeline-container" id="timeline">
-    <div class="time-ruler" id="ruler"></div>
     <div class="cursor-line" id="cursorLine"></div>
   </div>
 
